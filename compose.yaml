@@ -14,15 +14,25 @@
 # 
 # then once updated simply `docker compose up`
 services:
-  # query_processing:
-  #   build:
-  #     context: ./query_processing
-  #   depends_on:
-  #     - postgres
-  #   environment:
-  #     # [fr: @zrygan; to: @all]
-  #     # update this later on. 
-  #     DATABASE_URL: something
+  query_processing:
+    build:
+      context: ./query_processing
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_USER: rymmers
+      DB_PASSWORD: rymmers_password
+      DB_NAME: rymmers_db
+    volumes:
+      - ./query_processing/dump.sql:/app/dump.sql
+      - ./query_processing/dumps:/app/dumps
+      - ./query_processing/queries:/app/queries
+      - ./query_processing/results:/app/results
+      - ./query_processing/src:/app/src
+      - ./query_processing/pyproject.toml:/app/pyproject.toml
 
   postgres:
     image: postgres:17
@@ -30,6 +40,11 @@ services:
       POSTGRES_USER: rymmers
       POSTGRES_PASSWORD: rymmers_password
       POSTGRES_DB: rymmers_db
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rymmers -d rymmers_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
