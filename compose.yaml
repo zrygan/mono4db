@@ -1,0 +1,39 @@
+# [fr: @zrygan; @to: all]
+# this message is probably for me in the future (i have not used Docker)
+# to add a new dependency simply add:
+# 
+#   ```
+#   <name_of_service>:
+#     image: <#>
+#     environment: <optional; for env vars>
+#       <env_var_name>: <its_value>
+#   ``` 
+# 
+# this is the same procedure for adding a project in the monorepo
+#   (see query_processing as an example).
+# 
+# then once updated simply `docker compose up`
+services:
+  # query_processing:
+  #   build:
+  #     context: ./query_processing
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     # [fr: @zrygan; to: @all]
+  #     # update this later on. 
+  #     DATABASE_URL: something
+
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: rymmers
+      POSTGRES_PASSWORD: rymmers_password
+      POSTGRES_DB: rymmers_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  postgres_data:
