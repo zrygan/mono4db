@@ -1,11 +1,12 @@
 """
-This file contains data classes and functions for benchmarking metrics.
+Data classes and functions for benchmarking metrics.
 
 # Future
 
 Perhaps in the future we can consider adding Postgre's EXPLAIN command
 (see: https://www.postgresql.org/docs/current/sql-explain.html).
 """
+
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any
