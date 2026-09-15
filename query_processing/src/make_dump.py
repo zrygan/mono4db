@@ -37,20 +37,20 @@ N_CUSTOMERS = 10_000
 N_INVENTORY = 50_000
 N_RENTALS = 500_000
 
-ZIPF_ALPHA = 1.25          # actor / film popularity exponent
+ZIPF_ALPHA = 1.25  # actor / film popularity exponent
 
 # Zipf-Mandelbrot rank offsets.  A pure Zipf (offset 0) at alpha=1.25 puts ~22%
 # of all probability mass on rank 1 alone, which would put one actor in 3 of
 # every 5 films and stack 12,000 copies of a single title.  A rank offset keeps
 # the alpha=1.25 tail while flattening the head into a believable "superstar"
 # tier.  See zipf_cdf() for the formula.
-ZIPF_OFFSET_ACTOR = 30     # -> top actor in ~200 of 5,000 films
-ZIPF_OFFSET_FILM = 60      # -> top title ~300 inventory copies
-ZIPF_OFFSET_COPY = 2000    # -> per-copy turnover premium for hot titles
+ZIPF_OFFSET_ACTOR = 30  # -> top actor in ~200 of 5,000 films
+ZIPF_OFFSET_FILM = 60  # -> top title ~300 inventory copies
+ZIPF_OFFSET_COPY = 2000  # -> per-copy turnover premium for hot titles
 
-PARETO_ALPHA = 1.16        # customer rental frequency (80/20-style tail)
-PARETO_CAP = 60.0          # truncate the Pareto tail (see assumptions)
-STORE_1_SHARE = 0.60       # share of inventory rows and rental volume
+PARETO_ALPHA = 1.16  # customer rental frequency (80/20-style tail)
+PARETO_CAP = 60.0  # truncate the Pareto tail (see assumptions)
+STORE_1_SHARE = 0.60  # share of inventory rows and rental volume
 
 UNRETURNED_FRACTION = 0.03  # share of rentals left with NULL return_date
 
@@ -65,15 +65,47 @@ CUSTOMER_SIGNUP_WINDOW = (datetime(2022, 1, 1), datetime(2023, 12, 31))
 # Monthly demand multipliers: summer blockbuster surge (Jun/Jul) and a
 # December holiday surge, with a soft shoulder in Aug/Nov.
 MONTH_WEIGHTS = {
-    1: 0.85, 2: 0.80, 3: 0.90, 4: 0.95, 5: 1.05, 6: 1.75,
-    7: 1.85, 8: 1.20, 9: 0.90, 10: 0.95, 11: 1.10, 12: 1.70,
+    1: 0.85,
+    2: 0.80,
+    3: 0.90,
+    4: 0.95,
+    5: 1.05,
+    6: 1.75,
+    7: 1.85,
+    8: 1.20,
+    9: 0.90,
+    10: 0.95,
+    11: 1.10,
+    12: 1.70,
 }
 YEAR_WEIGHTS = {2024: 1.00, 2025: 1.12}  # modest year-over-year growth
 
 # Rentals cluster in late afternoon / evening.
 HOUR_WEIGHTS = [
-    0.15, 0.08, 0.05, 0.04, 0.04, 0.06, 0.15, 0.35, 0.60, 0.75, 0.85, 0.95,
-    1.05, 1.10, 1.20, 1.45, 1.85, 2.20, 2.40, 2.25, 1.80, 1.30, 0.80, 0.40,
+    0.15,
+    0.08,
+    0.05,
+    0.04,
+    0.04,
+    0.06,
+    0.15,
+    0.35,
+    0.60,
+    0.75,
+    0.85,
+    0.95,
+    1.05,
+    1.10,
+    1.20,
+    1.45,
+    1.85,
+    2.20,
+    2.40,
+    2.25,
+    1.80,
+    1.30,
+    0.80,
+    0.40,
 ]
 
 # ---------------------------------------------------------------------------
@@ -84,138 +116,724 @@ LANGUAGES = ["English", "Spanish", "French", "German", "Italian", "Japanese"]
 LANGUAGE_WEIGHTS = [0.74, 0.07, 0.06, 0.05, 0.04, 0.04]
 
 CATEGORIES = [
-    "Action", "Animation", "Children", "Classics", "Comedy", "Documentary",
-    "Drama", "Family", "Foreign", "Games", "Horror", "Music", "New",
-    "Sci-Fi", "Sports", "Travel",
+    "Action",
+    "Animation",
+    "Children",
+    "Classics",
+    "Comedy",
+    "Documentary",
+    "Drama",
+    "Family",
+    "Foreign",
+    "Games",
+    "Horror",
+    "Music",
+    "New",
+    "Sci-Fi",
+    "Sports",
+    "Travel",
 ]
 CATEGORY_WEIGHTS = [
-    1.60, 0.85, 0.80, 0.55, 1.50, 0.60, 1.55, 0.75, 0.50, 0.35, 1.05, 0.55,
-    0.90, 1.20, 0.60, 0.40,
+    1.60,
+    0.85,
+    0.80,
+    0.55,
+    1.50,
+    0.60,
+    1.55,
+    0.75,
+    0.50,
+    0.35,
+    1.05,
+    0.55,
+    0.90,
+    1.20,
+    0.60,
+    0.40,
 ]
 
 STORES = ["Flagship", "Suburban"]
 
 FIRST_NAMES = [
-    "Aaliyah", "Adam", "Adrian", "Aisha", "Alan", "Alba", "Alejandro", "Alice",
-    "Amara", "Amelia", "Andre", "Andrea", "Angela", "Anita", "Anton", "Arjun",
-    "Arthur", "Astrid", "Aubrey", "Audrey", "Beatriz", "Ben", "Bianca", "Blake",
-    "Bruno", "Camila", "Carl", "Carmen", "Caroline", "Cedric", "Celia", "Cesar",
-    "Charlotte", "Chen", "Chloe", "Clara", "Colin", "Cora", "Damien", "Daniela",
-    "Dario", "David", "Delia", "Denise", "Diego", "Dimitri", "Dorothy", "Duncan",
-    "Edith", "Eduardo", "Elena", "Eli", "Elsie", "Emeka", "Emil", "Emma",
-    "Enzo", "Esther", "Ethan", "Eva", "Fabian", "Faith", "Farid", "Felicity",
-    "Fiona", "Florence", "Franco", "Freya", "Gabriel", "Gemma", "Gerald",
-    "Gina", "Grace", "Gregor", "Guilherme", "Hana", "Harold", "Hassan",
-    "Heather", "Hector", "Helena", "Hiro", "Hugo", "Ibrahim", "Ida", "Igor",
-    "Imani", "Ines", "Irene", "Isaac", "Ivan", "Jade", "Jasper", "Javier",
-    "Jean", "Jelena", "Jerome", "Joan", "Jonas", "Josefina", "Judith", "Julius",
-    "Kai", "Kamil", "Karin", "Kasia", "Keiko", "Kenji", "Khalid", "Kiran",
-    "Klaus", "Lachlan", "Laila", "Lars", "Laura", "Leandro", "Leila", "Leo",
-    "Lila", "Linus", "Lorena", "Lucas", "Lucia", "Ludmila", "Lukas", "Mabel",
-    "Magnus", "Maia", "Malik", "Manon", "Marcel", "Margot", "Mariana", "Mario",
-    "Martha", "Mateo", "Matilda", "Maya", "Mei", "Melina", "Miguel", "Mira",
-    "Miriam", "Mohan", "Nadia", "Naomi", "Natalia", "Nathan", "Neve", "Niamh",
-    "Nikolai", "Nina", "Noah", "Nora", "Octavia", "Olga", "Oliver", "Omar",
-    "Oscar", "Paloma", "Pascal", "Patricia", "Paulo", "Petra", "Philip",
-    "Priya", "Quentin", "Rafael", "Ramona", "Raul", "Rebecca", "Reza",
-    "Rhiannon", "Ricardo", "Rita", "Roman", "Rosa", "Rowan", "Ruby", "Rupert",
-    "Sadie", "Salma", "Samir", "Sandra", "Sasha", "Sebastian", "Selma",
-    "Sergio", "Shaun", "Sienna", "Sofia", "Soren", "Stella", "Sven", "Sylvia",
-    "Tadeusz", "Tamara", "Tariq", "Tessa", "Thea", "Theodore", "Tomas",
-    "Ursula", "Valeria", "Vera", "Victor", "Vincent", "Viola", "Walter",
-    "Wanda", "Wei", "Wesley", "Willa", "Xavier", "Yara", "Yasmin", "Yuki",
-    "Yusuf", "Zainab", "Zara", "Zoe",
+    "Aaliyah",
+    "Adam",
+    "Adrian",
+    "Aisha",
+    "Alan",
+    "Alba",
+    "Alejandro",
+    "Alice",
+    "Amara",
+    "Amelia",
+    "Andre",
+    "Andrea",
+    "Angela",
+    "Anita",
+    "Anton",
+    "Arjun",
+    "Arthur",
+    "Astrid",
+    "Aubrey",
+    "Audrey",
+    "Beatriz",
+    "Ben",
+    "Bianca",
+    "Blake",
+    "Bruno",
+    "Camila",
+    "Carl",
+    "Carmen",
+    "Caroline",
+    "Cedric",
+    "Celia",
+    "Cesar",
+    "Charlotte",
+    "Chen",
+    "Chloe",
+    "Clara",
+    "Colin",
+    "Cora",
+    "Damien",
+    "Daniela",
+    "Dario",
+    "David",
+    "Delia",
+    "Denise",
+    "Diego",
+    "Dimitri",
+    "Dorothy",
+    "Duncan",
+    "Edith",
+    "Eduardo",
+    "Elena",
+    "Eli",
+    "Elsie",
+    "Emeka",
+    "Emil",
+    "Emma",
+    "Enzo",
+    "Esther",
+    "Ethan",
+    "Eva",
+    "Fabian",
+    "Faith",
+    "Farid",
+    "Felicity",
+    "Fiona",
+    "Florence",
+    "Franco",
+    "Freya",
+    "Gabriel",
+    "Gemma",
+    "Gerald",
+    "Gina",
+    "Grace",
+    "Gregor",
+    "Guilherme",
+    "Hana",
+    "Harold",
+    "Hassan",
+    "Heather",
+    "Hector",
+    "Helena",
+    "Hiro",
+    "Hugo",
+    "Ibrahim",
+    "Ida",
+    "Igor",
+    "Imani",
+    "Ines",
+    "Irene",
+    "Isaac",
+    "Ivan",
+    "Jade",
+    "Jasper",
+    "Javier",
+    "Jean",
+    "Jelena",
+    "Jerome",
+    "Joan",
+    "Jonas",
+    "Josefina",
+    "Judith",
+    "Julius",
+    "Kai",
+    "Kamil",
+    "Karin",
+    "Kasia",
+    "Keiko",
+    "Kenji",
+    "Khalid",
+    "Kiran",
+    "Klaus",
+    "Lachlan",
+    "Laila",
+    "Lars",
+    "Laura",
+    "Leandro",
+    "Leila",
+    "Leo",
+    "Lila",
+    "Linus",
+    "Lorena",
+    "Lucas",
+    "Lucia",
+    "Ludmila",
+    "Lukas",
+    "Mabel",
+    "Magnus",
+    "Maia",
+    "Malik",
+    "Manon",
+    "Marcel",
+    "Margot",
+    "Mariana",
+    "Mario",
+    "Martha",
+    "Mateo",
+    "Matilda",
+    "Maya",
+    "Mei",
+    "Melina",
+    "Miguel",
+    "Mira",
+    "Miriam",
+    "Mohan",
+    "Nadia",
+    "Naomi",
+    "Natalia",
+    "Nathan",
+    "Neve",
+    "Niamh",
+    "Nikolai",
+    "Nina",
+    "Noah",
+    "Nora",
+    "Octavia",
+    "Olga",
+    "Oliver",
+    "Omar",
+    "Oscar",
+    "Paloma",
+    "Pascal",
+    "Patricia",
+    "Paulo",
+    "Petra",
+    "Philip",
+    "Priya",
+    "Quentin",
+    "Rafael",
+    "Ramona",
+    "Raul",
+    "Rebecca",
+    "Reza",
+    "Rhiannon",
+    "Ricardo",
+    "Rita",
+    "Roman",
+    "Rosa",
+    "Rowan",
+    "Ruby",
+    "Rupert",
+    "Sadie",
+    "Salma",
+    "Samir",
+    "Sandra",
+    "Sasha",
+    "Sebastian",
+    "Selma",
+    "Sergio",
+    "Shaun",
+    "Sienna",
+    "Sofia",
+    "Soren",
+    "Stella",
+    "Sven",
+    "Sylvia",
+    "Tadeusz",
+    "Tamara",
+    "Tariq",
+    "Tessa",
+    "Thea",
+    "Theodore",
+    "Tomas",
+    "Ursula",
+    "Valeria",
+    "Vera",
+    "Victor",
+    "Vincent",
+    "Viola",
+    "Walter",
+    "Wanda",
+    "Wei",
+    "Wesley",
+    "Willa",
+    "Xavier",
+    "Yara",
+    "Yasmin",
+    "Yuki",
+    "Yusuf",
+    "Zainab",
+    "Zara",
+    "Zoe",
 ]
 
 LAST_NAMES = [
-    "Abbott", "Acosta", "Adeyemi", "Aguilar", "Ahmed", "Akande", "Albrecht",
-    "Alonso", "Andersen", "Andrade", "Arnaud", "Ashford", "Azevedo", "Baptiste",
-    "Barnes", "Bauer", "Beaumont", "Belanger", "Bennett", "Bergstrom",
-    "Bianchi", "Blackwood", "Bonnet", "Borges", "Bouchard", "Bradshaw",
-    "Brennan", "Brossard", "Bukowski", "Caldwell", "Campos", "Caruso",
-    "Castellanos", "Chandra", "Chatterjee", "Chevalier", "Chowdhury",
-    "Christensen", "Clarke", "Coelho", "Conti", "Cortez", "Costa", "Cruz",
-    "D'Alessandro", "D'Angelo", "Dalgaard", "Danilov", "Darwish", "Da Silva",
-    "Delacroix", "Delgado", "Demir", "Dimitrov", "Donnelly", "Dubois",
-    "Duarte", "Eberhardt", "Egan", "Eklund", "Ellison", "Engel", "Escobar",
-    "Fairbanks", "Falcone", "Farrell", "Ferreira", "Fitzgerald", "Fontaine",
-    "Forsberg", "Fournier", "Gallagher", "Garcia", "Gauthier", "Gerasimov",
-    "Gilmore", "Giordano", "Gonzalez", "Grant", "Greco", "Gruber",
-    "Gustafsson", "Halvorsen", "Hamilton", "Hanaoka", "Hansen", "Haugen",
-    "Hayashi", "Hendricks", "Herrera", "Hoffmann", "Holloway", "Horvath",
-    "Huang", "Ibarra", "Iglesias", "Ingram", "Ishikawa", "Jankowski",
-    "Jensen", "Jimenez", "Kaczmarek", "Kalinin", "Kamara", "Kaufman",
-    "Kavanagh", "Keller", "Kimura", "Kirkland", "Klein", "Kovacs", "Kowalski",
-    "Krause", "Lacroix", "Lambert", "Langdon", "Larsen", "Laurent", "Leclerc",
-    "Lindqvist", "Lombardi", "Lopez", "Lovelace", "Lundgren", "Maartens",
-    "Machado", "Maddox", "Magnusson", "Mahmoud", "Marchetti", "Marino",
-    "Martinez", "Mathieu", "Mbeki", "McAllister", "McKenna", "Medeiros",
-    "Mendoza", "Meyer", "Mikkelsen", "Moreau", "Moreno", "Morrissey",
-    "Mostafa", "Mueller", "Nakamura", "Navarro", "Nguyen", "Nicolescu",
-    "Nielsen", "Novak", "Nowak", "O'Brien", "O'Donnell", "Okafor", "Oliveira",
-    "Olsen", "Ortega", "Ostrowski", "Paczkowski", "Palmer", "Pappas",
-    "Pedersen", "Pereira", "Petrov", "Pham", "Pinto", "Popescu", "Prescott",
-    "Quintana", "Radcliffe", "Rahman", "Ramirez", "Rasmussen", "Redmond",
-    "Reyes", "Ricci", "Richter", "Rinaldi", "Rivera", "Rocha", "Rodriguez",
-    "Rosales", "Rossi", "Rousseau", "Sandoval", "Santoro", "Sawyer",
-    "Schneider", "Schulz", "Serrano", "Sharma", "Shimizu", "Silva",
-    "Sinclair", "Solberg", "Sorensen", "Sousa", "Stavros", "Steinberg",
-    "Suzuki", "Svensson", "Szabo", "Tanaka", "Teixeira", "Thornton",
-    "Tremblay", "Ueda", "Vance", "Varga", "Vasquez", "Velasquez", "Villanueva",
-    "Vogel", "Wagner", "Wallace", "Watanabe", "Weber", "Whitfield",
-    "Wojcik", "Yamamoto", "Yilmaz", "Zamora", "Zielinski",
+    "Abbott",
+    "Acosta",
+    "Adeyemi",
+    "Aguilar",
+    "Ahmed",
+    "Akande",
+    "Albrecht",
+    "Alonso",
+    "Andersen",
+    "Andrade",
+    "Arnaud",
+    "Ashford",
+    "Azevedo",
+    "Baptiste",
+    "Barnes",
+    "Bauer",
+    "Beaumont",
+    "Belanger",
+    "Bennett",
+    "Bergstrom",
+    "Bianchi",
+    "Blackwood",
+    "Bonnet",
+    "Borges",
+    "Bouchard",
+    "Bradshaw",
+    "Brennan",
+    "Brossard",
+    "Bukowski",
+    "Caldwell",
+    "Campos",
+    "Caruso",
+    "Castellanos",
+    "Chandra",
+    "Chatterjee",
+    "Chevalier",
+    "Chowdhury",
+    "Christensen",
+    "Clarke",
+    "Coelho",
+    "Conti",
+    "Cortez",
+    "Costa",
+    "Cruz",
+    "D'Alessandro",
+    "D'Angelo",
+    "Dalgaard",
+    "Danilov",
+    "Darwish",
+    "Da Silva",
+    "Delacroix",
+    "Delgado",
+    "Demir",
+    "Dimitrov",
+    "Donnelly",
+    "Dubois",
+    "Duarte",
+    "Eberhardt",
+    "Egan",
+    "Eklund",
+    "Ellison",
+    "Engel",
+    "Escobar",
+    "Fairbanks",
+    "Falcone",
+    "Farrell",
+    "Ferreira",
+    "Fitzgerald",
+    "Fontaine",
+    "Forsberg",
+    "Fournier",
+    "Gallagher",
+    "Garcia",
+    "Gauthier",
+    "Gerasimov",
+    "Gilmore",
+    "Giordano",
+    "Gonzalez",
+    "Grant",
+    "Greco",
+    "Gruber",
+    "Gustafsson",
+    "Halvorsen",
+    "Hamilton",
+    "Hanaoka",
+    "Hansen",
+    "Haugen",
+    "Hayashi",
+    "Hendricks",
+    "Herrera",
+    "Hoffmann",
+    "Holloway",
+    "Horvath",
+    "Huang",
+    "Ibarra",
+    "Iglesias",
+    "Ingram",
+    "Ishikawa",
+    "Jankowski",
+    "Jensen",
+    "Jimenez",
+    "Kaczmarek",
+    "Kalinin",
+    "Kamara",
+    "Kaufman",
+    "Kavanagh",
+    "Keller",
+    "Kimura",
+    "Kirkland",
+    "Klein",
+    "Kovacs",
+    "Kowalski",
+    "Krause",
+    "Lacroix",
+    "Lambert",
+    "Langdon",
+    "Larsen",
+    "Laurent",
+    "Leclerc",
+    "Lindqvist",
+    "Lombardi",
+    "Lopez",
+    "Lovelace",
+    "Lundgren",
+    "Maartens",
+    "Machado",
+    "Maddox",
+    "Magnusson",
+    "Mahmoud",
+    "Marchetti",
+    "Marino",
+    "Martinez",
+    "Mathieu",
+    "Mbeki",
+    "McAllister",
+    "McKenna",
+    "Medeiros",
+    "Mendoza",
+    "Meyer",
+    "Mikkelsen",
+    "Moreau",
+    "Moreno",
+    "Morrissey",
+    "Mostafa",
+    "Mueller",
+    "Nakamura",
+    "Navarro",
+    "Nguyen",
+    "Nicolescu",
+    "Nielsen",
+    "Novak",
+    "Nowak",
+    "O'Brien",
+    "O'Donnell",
+    "Okafor",
+    "Oliveira",
+    "Olsen",
+    "Ortega",
+    "Ostrowski",
+    "Paczkowski",
+    "Palmer",
+    "Pappas",
+    "Pedersen",
+    "Pereira",
+    "Petrov",
+    "Pham",
+    "Pinto",
+    "Popescu",
+    "Prescott",
+    "Quintana",
+    "Radcliffe",
+    "Rahman",
+    "Ramirez",
+    "Rasmussen",
+    "Redmond",
+    "Reyes",
+    "Ricci",
+    "Richter",
+    "Rinaldi",
+    "Rivera",
+    "Rocha",
+    "Rodriguez",
+    "Rosales",
+    "Rossi",
+    "Rousseau",
+    "Sandoval",
+    "Santoro",
+    "Sawyer",
+    "Schneider",
+    "Schulz",
+    "Serrano",
+    "Sharma",
+    "Shimizu",
+    "Silva",
+    "Sinclair",
+    "Solberg",
+    "Sorensen",
+    "Sousa",
+    "Stavros",
+    "Steinberg",
+    "Suzuki",
+    "Svensson",
+    "Szabo",
+    "Tanaka",
+    "Teixeira",
+    "Thornton",
+    "Tremblay",
+    "Ueda",
+    "Vance",
+    "Varga",
+    "Vasquez",
+    "Velasquez",
+    "Villanueva",
+    "Vogel",
+    "Wagner",
+    "Wallace",
+    "Watanabe",
+    "Weber",
+    "Whitfield",
+    "Wojcik",
+    "Yamamoto",
+    "Yilmaz",
+    "Zamora",
+    "Zielinski",
 ]
 
 TITLE_ADJECTIVES = [
-    "Amber", "Ancient", "Atomic", "Blazing", "Brazen", "Broken", "Burning",
-    "Crimson", "Crooked", "Crystal", "Dark", "Daring", "Distant", "Eternal",
-    "Fearless", "Feral", "Final", "Forgotten", "Frozen", "Furious", "Gilded",
-    "Golden", "Grand", "Hidden", "Hollow", "Infinite", "Iron", "Jagged",
-    "Lonesome", "Lost", "Midnight", "Molten", "Nameless", "Northern",
-    "Perfect", "Phantom", "Quiet", "Radiant", "Reckless", "Restless",
-    "Sacred", "Savage", "Scarlet", "Secret", "Shattered", "Silent", "Silver",
-    "Sleepless", "Solemn", "Southern", "Stolen", "Stubborn", "Sunken",
-    "Tender", "Thundering", "Tragic", "Twilight", "Unbroken", "Velvet",
-    "Wandering", "Wicked", "Wild", "Winter", "Wounded",
+    "Amber",
+    "Ancient",
+    "Atomic",
+    "Blazing",
+    "Brazen",
+    "Broken",
+    "Burning",
+    "Crimson",
+    "Crooked",
+    "Crystal",
+    "Dark",
+    "Daring",
+    "Distant",
+    "Eternal",
+    "Fearless",
+    "Feral",
+    "Final",
+    "Forgotten",
+    "Frozen",
+    "Furious",
+    "Gilded",
+    "Golden",
+    "Grand",
+    "Hidden",
+    "Hollow",
+    "Infinite",
+    "Iron",
+    "Jagged",
+    "Lonesome",
+    "Lost",
+    "Midnight",
+    "Molten",
+    "Nameless",
+    "Northern",
+    "Perfect",
+    "Phantom",
+    "Quiet",
+    "Radiant",
+    "Reckless",
+    "Restless",
+    "Sacred",
+    "Savage",
+    "Scarlet",
+    "Secret",
+    "Shattered",
+    "Silent",
+    "Silver",
+    "Sleepless",
+    "Solemn",
+    "Southern",
+    "Stolen",
+    "Stubborn",
+    "Sunken",
+    "Tender",
+    "Thundering",
+    "Tragic",
+    "Twilight",
+    "Unbroken",
+    "Velvet",
+    "Wandering",
+    "Wicked",
+    "Wild",
+    "Winter",
+    "Wounded",
 ]
 
 TITLE_NOUNS = [
-    "Abyss", "Affair", "Anthem", "Apostle", "Archive", "Armada", "Ballad",
-    "Bandit", "Banquet", "Beacon", "Bridge", "Cabaret", "Cannon", "Carnival",
-    "Cathedral", "Cavalry", "Cipher", "Citadel", "Compass", "Confession",
-    "Conspiracy", "Courier", "Covenant", "Crossing", "Crusade", "Dagger",
-    "Detective", "Dominion", "Drifter", "Echo", "Eclipse", "Emissary",
-    "Empire", "Escape", "Exodus", "Fable", "Falcon", "Fortress", "Foundry",
-    "Frontier", "Gambit", "Gardener", "Garrison", "Gospel", "Harbour",
-    "Harvest", "Highway", "Horizon", "Hourglass", "Hunter", "Inferno",
-    "Inheritance", "Junction", "Kingdom", "Lantern", "Legacy", "Lighthouse",
-    "Locket", "Machine", "Mariner", "Masquerade", "Menagerie", "Meridian",
-    "Monsoon", "Mountain", "Mutiny", "Nomad", "Oath", "Obsession", "Odyssey",
-    "Orchard", "Outpost", "Paradox", "Pilgrim", "Pioneer", "Prophecy",
-    "Quarry", "Rebellion", "Reckoning", "Requiem", "Riddle", "Rodeo",
-    "Sanctuary", "Sentinel", "Serenade", "Shadow", "Sonata", "Specter",
-    "Stampede", "Stranger", "Summit", "Syndicate", "Tempest", "Testament",
-    "Threshold", "Tribunal", "Tundra", "Vagabond", "Verdict", "Vigil",
-    "Voyage", "Warden", "Whisper", "Wilderness", "Witness", "Zenith",
+    "Abyss",
+    "Affair",
+    "Anthem",
+    "Apostle",
+    "Archive",
+    "Armada",
+    "Ballad",
+    "Bandit",
+    "Banquet",
+    "Beacon",
+    "Bridge",
+    "Cabaret",
+    "Cannon",
+    "Carnival",
+    "Cathedral",
+    "Cavalry",
+    "Cipher",
+    "Citadel",
+    "Compass",
+    "Confession",
+    "Conspiracy",
+    "Courier",
+    "Covenant",
+    "Crossing",
+    "Crusade",
+    "Dagger",
+    "Detective",
+    "Dominion",
+    "Drifter",
+    "Echo",
+    "Eclipse",
+    "Emissary",
+    "Empire",
+    "Escape",
+    "Exodus",
+    "Fable",
+    "Falcon",
+    "Fortress",
+    "Foundry",
+    "Frontier",
+    "Gambit",
+    "Gardener",
+    "Garrison",
+    "Gospel",
+    "Harbour",
+    "Harvest",
+    "Highway",
+    "Horizon",
+    "Hourglass",
+    "Hunter",
+    "Inferno",
+    "Inheritance",
+    "Junction",
+    "Kingdom",
+    "Lantern",
+    "Legacy",
+    "Lighthouse",
+    "Locket",
+    "Machine",
+    "Mariner",
+    "Masquerade",
+    "Menagerie",
+    "Meridian",
+    "Monsoon",
+    "Mountain",
+    "Mutiny",
+    "Nomad",
+    "Oath",
+    "Obsession",
+    "Odyssey",
+    "Orchard",
+    "Outpost",
+    "Paradox",
+    "Pilgrim",
+    "Pioneer",
+    "Prophecy",
+    "Quarry",
+    "Rebellion",
+    "Reckoning",
+    "Requiem",
+    "Riddle",
+    "Rodeo",
+    "Sanctuary",
+    "Sentinel",
+    "Serenade",
+    "Shadow",
+    "Sonata",
+    "Specter",
+    "Stampede",
+    "Stranger",
+    "Summit",
+    "Syndicate",
+    "Tempest",
+    "Testament",
+    "Threshold",
+    "Tribunal",
+    "Tundra",
+    "Vagabond",
+    "Verdict",
+    "Vigil",
+    "Voyage",
+    "Warden",
+    "Whisper",
+    "Wilderness",
+    "Witness",
+    "Zenith",
 ]
 
 TITLE_PLACES = [
-    "Alaska", "Andalusia", "Barcelona", "Berlin", "Bombay", "Brooklyn",
-    "Cairo", "Casablanca", "Dakar", "Dublin", "Havana", "Helsinki",
-    "Istanbul", "Kyoto", "Lisbon", "Marrakesh", "Montana", "Naples",
-    "Odessa", "Patagonia", "Prague", "Reykjavik", "Saigon", "Santiago",
-    "Seville", "Shanghai", "Siberia", "Tangier", "Valparaiso", "Vienna",
+    "Alaska",
+    "Andalusia",
+    "Barcelona",
+    "Berlin",
+    "Bombay",
+    "Brooklyn",
+    "Cairo",
+    "Casablanca",
+    "Dakar",
+    "Dublin",
+    "Havana",
+    "Helsinki",
+    "Istanbul",
+    "Kyoto",
+    "Lisbon",
+    "Marrakesh",
+    "Montana",
+    "Naples",
+    "Odessa",
+    "Patagonia",
+    "Prague",
+    "Reykjavik",
+    "Saigon",
+    "Santiago",
+    "Seville",
+    "Shanghai",
+    "Siberia",
+    "Tangier",
+    "Valparaiso",
+    "Vienna",
 ]
 
 PLOT_SUBJECTS = [
-    "a disgraced archivist", "a retired safecracker", "a small-town botanist",
-    "a war correspondent", "a teenage chess prodigy", "an itinerant preacher",
-    "a deep-sea welder", "a disillusioned prosecutor", "a travelling puppeteer",
-    "a rookie air traffic controller", "a widowed lighthouse keeper",
-    "a forger of Renaissance drawings", "a night-shift paramedic",
-    "a cartographer with a failing memory", "an exiled concert pianist",
-    "a cattle rancher's daughter", "a bankrupt theatre impresario",
-    "a code-breaker on unpaid leave", "a beekeeper turned detective",
+    "a disgraced archivist",
+    "a retired safecracker",
+    "a small-town botanist",
+    "a war correspondent",
+    "a teenage chess prodigy",
+    "an itinerant preacher",
+    "a deep-sea welder",
+    "a disillusioned prosecutor",
+    "a travelling puppeteer",
+    "a rookie air traffic controller",
+    "a widowed lighthouse keeper",
+    "a forger of Renaissance drawings",
+    "a night-shift paramedic",
+    "a cartographer with a failing memory",
+    "an exiled concert pianist",
+    "a cattle rancher's daughter",
+    "a bankrupt theatre impresario",
+    "a code-breaker on unpaid leave",
+    "a beekeeper turned detective",
     "an understudy who never went on",
 ]
 
@@ -237,16 +855,25 @@ PLOT_COMPLICATIONS = [
 ]
 
 PLOT_SETTINGS = [
-    "in a flooded mining town", "aboard a decommissioned ferry",
-    "during a three-day power outage", "on the last night of the harvest fair",
-    "in a monastery converted to a hotel", "along a closed mountain highway",
-    "in the ruins of a seaside amusement park", "under martial curfew",
-    "in a border town with two clocks", "at an airfield the maps no longer show",
-    "through a winter that refuses to end", "in a city rebuilt on its own rubble",
+    "in a flooded mining town",
+    "aboard a decommissioned ferry",
+    "during a three-day power outage",
+    "on the last night of the harvest fair",
+    "in a monastery converted to a hotel",
+    "along a closed mountain highway",
+    "in the ruins of a seaside amusement park",
+    "under martial curfew",
+    "in a border town with two clocks",
+    "at an airfield the maps no longer show",
+    "through a winter that refuses to end",
+    "in a city rebuilt on its own rubble",
 ]
 
 SPECIAL_FEATURES = [
-    "Trailers", "Commentaries", "Deleted Scenes", "Behind the Scenes",
+    "Trailers",
+    "Commentaries",
+    "Deleted Scenes",
+    "Behind the Scenes",
 ]
 
 RATINGS = ["G", "PG", "PG-13", "R", "NC-17"]
@@ -265,15 +892,17 @@ EMAIL_DOMAIN = "sakiladb.example.com"
 # terminated, and backslash is the escape character.  Single quotes carry no
 # special meaning here and must NOT be doubled -- doing so would corrupt the
 # data.  \N is the NULL marker.
-_COPY_ESCAPES = str.maketrans({
-    "\\": "\\\\",
-    "\n": "\\n",
-    "\r": "\\r",
-    "\t": "\\t",
-    "\v": "\\v",
-    "\f": "\\f",
-    "\b": "\\b",
-})
+_COPY_ESCAPES = str.maketrans(
+    {
+        "\\": "\\\\",
+        "\n": "\\n",
+        "\r": "\\r",
+        "\t": "\\t",
+        "\v": "\\v",
+        "\f": "\\f",
+        "\b": "\\b",
+    }
+)
 
 NULL_MARKER = "\\N"
 
@@ -308,9 +937,7 @@ class DumpWriter:
         self.handle.write(text)
 
     def begin_copy(self, table: str, columns: list[str]) -> None:
-        self.handle.write(
-            "COPY {} ({}) FROM stdin;\n".format(table, ", ".join(columns))
-        )
+        self.handle.write("COPY {} ({}) FROM stdin;\n".format(table, ", ".join(columns)))
 
     def end_copy(self) -> None:
         self.handle.write("\\.\n\n")
@@ -323,9 +950,7 @@ class DumpWriter:
         for table, column, max_id in self.sequences:
             self.handle.write(
                 "SELECT setval('{table}_{column}_seq', "
-                "(SELECT MAX({column}) FROM {table}), true);\n".format(
-                    table=table, column=column
-                )
+                "(SELECT MAX({column}) FROM {table}), true);\n".format(table=table, column=column)
             )
 
 
@@ -361,8 +986,9 @@ def zipf_cdf(n: int, alpha: float = ZIPF_ALPHA, offset: float = 0.0) -> list[flo
     return build_cdf([1.0 / ((i + 1 + offset) ** alpha) for i in range(n)])
 
 
-def pareto_weights(n: int, rng, alpha: float = PARETO_ALPHA,
-                   x_min: float = 1.0, cap: float = PARETO_CAP) -> list[float]:
+def pareto_weights(
+    n: int, rng, alpha: float = PARETO_ALPHA, x_min: float = 1.0, cap: float = PARETO_CAP
+) -> list[float]:
     """Draw ``n`` Pareto(alpha, x_min) weights by inverse transform.
 
     CDF F(x) = 1 - (x_min / x) ** alpha  =>  x = x_min * (1 - u) ** (-1/alpha)
@@ -371,8 +997,7 @@ def pareto_weights(n: int, rng, alpha: float = PARETO_ALPHA,
     produces a single weight thousands of times the mean, which here would mean
     one customer taking out ~50,000 rentals in two years.
     """
-    return [min(cap, x_min * (1.0 - rng.random()) ** (-1.0 / alpha))
-            for _ in range(n)]
+    return [min(cap, x_min * (1.0 - rng.random()) ** (-1.0 / alpha)) for _ in range(n)]
 
 
 def random_datetime(rng: random.Random, start: datetime, end: datetime) -> datetime:
@@ -423,12 +1048,14 @@ def write_actor(w: DumpWriter, rng: random.Random) -> list[int]:
     ids = []
     for actor_id in range(1, N_ACTORS + 1):
         ids.append(actor_id)
-        w.raw(row(
-            actor_id,
-            rng.choice(FIRST_NAMES),
-            rng.choice(LAST_NAMES),
-            random_datetime(rng, *CATALOGUE_WINDOW),
-        ))
+        w.raw(
+            row(
+                actor_id,
+                rng.choice(FIRST_NAMES),
+                rng.choice(LAST_NAMES),
+                random_datetime(rng, *CATALOGUE_WINDOW),
+            )
+        )
     w.end_copy()
     w.note_sequence("actor", "actor_id", N_ACTORS)
     return ids
@@ -463,8 +1090,20 @@ def make_title(rng: random.Random, used: set) -> str:
 
 def make_description(rng: random.Random) -> str:
     return "A {} tale in which {} {} {}.".format(
-        rng.choice(["riveting", "brooding", "wry", "tender", "bleak", "rousing",
-                    "understated", "frantic", "meditative", "scabrous"]),
+        rng.choice(
+            [
+                "riveting",
+                "brooding",
+                "wry",
+                "tender",
+                "bleak",
+                "rousing",
+                "understated",
+                "frantic",
+                "meditative",
+                "scabrous",
+            ]
+        ),
         rng.choice(PLOT_SUBJECTS),
         rng.choice(PLOT_COMPLICATIONS),
         rng.choice(PLOT_SETTINGS),
@@ -477,11 +1116,24 @@ def write_film(w: DumpWriter, rng: random.Random, language_ids: list[int]) -> di
     years = list(range(1985, 2026))
     year_cdf = build_cdf([1.03 ** (y - 1985) for y in years])
 
-    w.begin_copy("film", [
-        "film_id", "title", "description", "release_year", "language_id",
-        "original_language_id", "rental_duration", "rental_rate", "length",
-        "replacement_cost", "rating", "special_features", "last_update",
-    ])
+    w.begin_copy(
+        "film",
+        [
+            "film_id",
+            "title",
+            "description",
+            "release_year",
+            "language_id",
+            "original_language_id",
+            "rental_duration",
+            "rental_rate",
+            "length",
+            "replacement_cost",
+            "rating",
+            "special_features",
+            "last_update",
+        ],
+    )
 
     used_titles: set = set()
     durations: dict[int, int] = {}
@@ -500,42 +1152,44 @@ def write_film(w: DumpWriter, rng: random.Random, language_ids: list[int]) -> di
         n_features = rng.choice([1, 1, 2, 2, 2, 3, 3, 4])
         features = ", ".join(sorted(rng.sample(SPECIAL_FEATURES, n_features)))
 
-        w.raw(row(
-            film_id,
-            make_title(rng, used_titles),
-            make_description(rng),
-            years[sample_cdf(year_cdf, rng)],
-            language_id,
-            original_language_id,
-            rental_duration,
-            RENTAL_RATES[sample_cdf(_RATE_CDF, rng)],
-            max(45, min(185, int(round(rng.gauss(112, 24))))),
-            "{:.2f}".format(rng.randrange(999, 2999, 100) / 100.0),
-            RATINGS[sample_cdf(_RATING_CDF, rng)],
-            features,
-            random_datetime(rng, *CATALOGUE_WINDOW),
-        ))
+        w.raw(
+            row(
+                film_id,
+                make_title(rng, used_titles),
+                make_description(rng),
+                years[sample_cdf(year_cdf, rng)],
+                language_id,
+                original_language_id,
+                rental_duration,
+                RENTAL_RATES[sample_cdf(_RATE_CDF, rng)],
+                max(45, min(185, int(round(rng.gauss(112, 24))))),
+                "{:.2f}".format(rng.randrange(999, 2999, 100) / 100.0),
+                RATINGS[sample_cdf(_RATING_CDF, rng)],
+                features,
+                random_datetime(rng, *CATALOGUE_WINDOW),
+            )
+        )
 
     w.end_copy()
     w.note_sequence("film", "film_id", N_FILMS)
     return durations
 
 
-def write_film_category(w: DumpWriter, rng: random.Random,
-                        category_ids: list[int]) -> None:
+def write_film_category(w: DumpWriter, rng: random.Random, category_ids: list[int]) -> None:
     cat_cdf = build_cdf(CATEGORY_WEIGHTS)
     w.begin_copy("film_category", ["film_id", "category_id", "last_update"])
     for film_id in range(1, N_FILMS + 1):
-        w.raw(row(
-            film_id,
-            category_ids[sample_cdf(cat_cdf, rng)],
-            random_datetime(rng, *CATALOGUE_WINDOW),
-        ))
+        w.raw(
+            row(
+                film_id,
+                category_ids[sample_cdf(cat_cdf, rng)],
+                random_datetime(rng, *CATALOGUE_WINDOW),
+            )
+        )
     w.end_copy()
 
 
-def write_film_actor(w: DumpWriter, rng: random.Random,
-                     actor_popularity_order: list[int]) -> int:
+def write_film_actor(w: DumpWriter, rng: random.Random, actor_popularity_order: list[int]) -> int:
     """2-5 actors per film, drawn Zipfian over the actor popularity ranking."""
     actor_cdf = zipf_cdf(len(actor_popularity_order), offset=ZIPF_OFFSET_ACTOR)
     cast_size_cdf = build_cdf([0.35, 0.35, 0.20, 0.10])  # -> 2, 3, 4, 5
@@ -559,10 +1213,19 @@ def write_film_actor(w: DumpWriter, rng: random.Random,
 
 
 def write_customer(w: DumpWriter, rng: random.Random) -> dict[int, list[int]]:
-    w.begin_copy("customer", [
-        "customer_id", "store_id", "first_name", "last_name", "email",
-        "active", "create_date", "last_update",
-    ])
+    w.begin_copy(
+        "customer",
+        [
+            "customer_id",
+            "store_id",
+            "first_name",
+            "last_name",
+            "email",
+            "active",
+            "create_date",
+            "last_update",
+        ],
+    )
     by_store: dict[int, list[int]] = {1: [], 2: []}
     seen_emails: set = set()
 
@@ -581,26 +1244,33 @@ def write_customer(w: DumpWriter, rng: random.Random) -> dict[int, list[int]]:
         max_local = 50 - len(EMAIL_DOMAIN) - 1 - len(str(customer_id)) - 1
         local = local[:max_local]
         email = "{}{}@{}".format(local, customer_id, EMAIL_DOMAIN)
-        if email in seen_emails:      # cannot happen (id suffix), belt and braces
+        if email in seen_emails:  # cannot happen (id suffix), belt and braces
             email = None
         else:
             seen_emails.add(email)
 
         create_date = random_datetime(rng, *CUSTOMER_SIGNUP_WINDOW)
-        w.raw(row(
-            customer_id, store_id, first, last, email,
-            rng.random() > 0.06,  # ~6% inactive
-            create_date,
-            create_date + timedelta(seconds=rng.randrange(86_400 * 400)),
-        ))
+        w.raw(
+            row(
+                customer_id,
+                store_id,
+                first,
+                last,
+                email,
+                rng.random() > 0.06,  # ~6% inactive
+                create_date,
+                create_date + timedelta(seconds=rng.randrange(86_400 * 400)),
+            )
+        )
 
     w.end_copy()
     w.note_sequence("customer", "customer_id", N_CUSTOMERS)
     return by_store
 
 
-def write_inventory(w: DumpWriter, rng: random.Random,
-                    film_popularity_order: list[int]) -> dict[int, list[int]]:
+def write_inventory(
+    w: DumpWriter, rng: random.Random, film_popularity_order: list[int]
+) -> dict[int, list[int]]:
     """Every film gets at least one copy; the rest follow film popularity."""
     film_cdf = zipf_cdf(len(film_popularity_order), offset=ZIPF_OFFSET_FILM)
 
@@ -617,8 +1287,7 @@ def write_inventory(w: DumpWriter, rng: random.Random,
         inventory_id = idx + 1
         store_id = 1 if idx < store_1_rows else 2
         by_store[store_id].append((inventory_id, film_id))
-        w.raw(row(inventory_id, film_id, store_id,
-                  random_datetime(rng, *CATALOGUE_WINDOW)))
+        w.raw(row(inventory_id, film_id, store_id, random_datetime(rng, *CATALOGUE_WINDOW)))
     w.end_copy()
     w.note_sequence("inventory", "inventory_id", N_INVENTORY)
     return by_store
@@ -647,11 +1316,13 @@ def sample_rental_datetime(rng: random.Random, months, month_cdf, hour_cdf) -> d
     return datetime(year, month, day, hour, rng.randrange(60), rng.randrange(60))
 
 
-def generate_rentals(rng: random.Random,
-                     inventory_by_store: dict[int, list[tuple[int, int]]],
-                     customers_by_store: dict[int, list[int]],
-                     film_rank: dict[int, int],
-                     film_durations: dict[int, int]) -> list[tuple]:
+def generate_rentals(
+    rng: random.Random,
+    inventory_by_store: dict[int, list[tuple[int, int]]],
+    customers_by_store: dict[int, list[int]],
+    film_rank: dict[int, int],
+    film_durations: dict[int, int],
+) -> list[tuple]:
     months, month_weights = build_month_buckets()
     month_cdf = build_cdf(month_weights)
     hour_cdf = build_cdf(HOUR_WEIGHTS)
@@ -687,7 +1358,7 @@ def generate_rentals(rng: random.Random,
 
         for _ in range(count):
             inventory_id, film_id = inv_pool[sample_cdf(inv_cdf, rng)]
-            if rng.random() < 0.90:                     # mostly the home store
+            if rng.random() < 0.90:  # mostly the home store
                 customer_id = home[sample_cdf(home_cdf, rng)]
             else:
                 customer_id = away[sample_cdf(away_cdf, rng)]
@@ -709,9 +1380,9 @@ def resolve_returns(rng: random.Random, rentals: list[tuple]) -> list:
 
     for idx, (when, inventory_id, _customer_id, duration) in enumerate(rentals):
         jitter_days = rng.choice([-2, -1, 0, 0, 0, 1, 1, 2, 3, 5])
-        held = timedelta(days=duration + jitter_days,
-                         hours=rng.randrange(-6, 19),
-                         minutes=rng.randrange(60))
+        held = timedelta(
+            days=duration + jitter_days, hours=rng.randrange(-6, 19), minutes=rng.randrange(60)
+        )
         if held < timedelta(hours=2):
             held = timedelta(hours=2, minutes=rng.randrange(60))
         returns[idx] = when + held
@@ -742,18 +1413,24 @@ def resolve_returns(rng: random.Random, rentals: list[tuple]) -> list:
 
 
 def write_rentals(w: DumpWriter, rentals: list[tuple], returns: list) -> None:
-    w.begin_copy("rental", [
-        "rental_id", "rental_date", "inventory_id", "customer_id",
-        "return_date", "last_update",
-    ])
+    w.begin_copy(
+        "rental",
+        [
+            "rental_id",
+            "rental_date",
+            "inventory_id",
+            "customer_id",
+            "return_date",
+            "last_update",
+        ],
+    )
     chunk: list[str] = []
     append = chunk.append
     for idx, (when, inventory_id, customer_id, _duration) in enumerate(rentals):
         rental_id = idx + 1
         return_date = returns[idx]
         last_update = return_date if return_date is not None else when
-        append(row(rental_id, when, inventory_id, customer_id,
-                   return_date, last_update))
+        append(row(rental_id, when, inventory_id, customer_id, return_date, last_update))
         if len(chunk) >= 20_000:
             w.raw("".join(chunk))
             chunk = []
@@ -789,8 +1466,8 @@ COMMIT;
 
 
 def main(output_path: Path) -> None:
-    random.seed(SEED)          # single seeding point -> byte-identical output
-    rng = random                # every draw below comes from this one stream
+    random.seed(SEED)  # single seeding point -> byte-identical output
+    rng = random  # every draw below comes from this one stream
 
     with output_path.open("w", encoding="utf-8", newline="\n") as handle:
         w = DumpWriter(handle)
@@ -817,8 +1494,9 @@ def main(output_path: Path) -> None:
         customers_by_store = write_customer(w, rng)
         inventory_by_store = write_inventory(w, rng, film_popularity_order)
 
-        rentals = generate_rentals(rng, inventory_by_store, customers_by_store,
-                                   film_rank, film_durations)
+        rentals = generate_rentals(
+            rng, inventory_by_store, customers_by_store, film_rank, film_durations
+        )
         returns = resolve_returns(rng, rentals)
         write_rentals(w, rentals, returns)
 
