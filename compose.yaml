@@ -29,7 +29,7 @@ services:
       DB_PASSWORD: rymmers_password
       DB_NAME: rymmers_db
     volumes:
-      - ./query_processing/dump.sql:/app/dump.sql
+      - ./query_processing/sql:/app/sql
       - ./query_processing/dumps:/app/dumps
       - ./query_processing/queries:/app/queries
       - ./query_processing/results:/app/results
