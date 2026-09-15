@@ -5,6 +5,7 @@ Functions for connecting to and managing the PostgreSQL database.
 import os
 import subprocess
 import time
+from pathlib import Path
 
 import psycopg
 
@@ -15,6 +16,7 @@ from src.config import (
     DB_PORT,
     DB_USER,
     DUMP_FILE,
+    SCHEMA_FILE,
 )
 
 
@@ -47,31 +49,11 @@ def wait_for_db(max_retries: int = 15, delay: float = 2.0) -> bool:
     return False
 
 
-def restore_dump() -> bool:
-    if not DUMP_FILE.exists():
-        print(f"Dump file not found: {DUMP_FILE}")
-        return False
-
-    print("Resetting database schema (clean slate)...")
-    try:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute("""
-                    DROP SCHEMA IF EXISTS public CASCADE;
-                    CREATE SCHEMA public;
-                    GRANT ALL ON SCHEMA public TO CURRENT_USER;
-                    GRANT ALL ON SCHEMA public TO PUBLIC;
-                """)
-    except Exception as e:
-        print(f"Error resetting database: {e}")
-        return False
-
-    print(f"Restoring dump: {DUMP_FILE.name}")
-
+def _run_sql_file(file_path: Path) -> bool:
     env = os.environ.copy()
     env["PGPASSWORD"] = DB_PASSWORD
 
-    if DUMP_FILE.suffix.lower() == ".sql":
+    if file_path.suffix.lower() == ".sql":
         cmd = [
             "psql",
             "-h",
@@ -83,7 +65,7 @@ def restore_dump() -> bool:
             "-d",
             DB_NAME,
             "-f",
-            str(DUMP_FILE),
+            str(file_path),
         ]
     else:
         cmd = [
@@ -100,7 +82,7 @@ def restore_dump() -> bool:
             "--if-exists",
             "--no-owner",
             "--no-privileges",
-            str(DUMP_FILE),
+            str(file_path),
         ]
 
     try:
@@ -108,10 +90,42 @@ def restore_dump() -> bool:
             args=cmd, env=env, capture_output=True, text=True, check=False
         )
         if result.returncode != 0:
-            print(f"Restore output:\n{result.stderr.strip() or result.stdout.strip()}")
-        else:
-            print("Database restored successfully.")
+            print(f"Error executing {file_path.name}:\n{result.stderr.strip() or result.stdout.strip()}")
+            return False
         return True
     except Exception as e:
-        print(f"Failed to restore dump: {e}")
+        print(f"Failed to execute {file_path.name}: {e}")
         return False
+
+
+def restore_dump() -> bool:
+    if not SCHEMA_FILE.exists() and not DUMP_FILE.exists():
+        print(f"Neither schema file ({SCHEMA_FILE}) nor dump file ({DUMP_FILE}) found.")
+        return False
+
+    print("Resetting database schema (clean slate)...")
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    DROP SCHEMA IF EXISTS public CASCADE;
+                    CREATE SCHEMA public;
+                    GRANT ALL ON SCHEMA public TO CURRENT_USER;
+                    GRANT ALL ON SCHEMA public TO PUBLIC;
+                """)
+    except Exception as e:
+        print(f"Error resetting database: {e}")
+        return False
+
+    if SCHEMA_FILE.exists():
+        print(f"Applying schema: {SCHEMA_FILE.name}")
+        if not _run_sql_file(SCHEMA_FILE):
+            return False
+
+    if DUMP_FILE.exists():
+        print(f"Restoring dump: {DUMP_FILE.name}")
+        if not _run_sql_file(DUMP_FILE):
+            return False
+
+    print("Database restored successfully.")
+    return True
