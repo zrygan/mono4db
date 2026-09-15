@@ -118,14 +118,11 @@ def restore_dump() -> bool:
         return False
 
     if SCHEMA_FILE.exists():
-        print(f"Applying schema: {SCHEMA_FILE.name}")
         if not _run_sql_file(SCHEMA_FILE):
             return False
 
     if DUMP_FILE.exists():
-        print(f"Restoring dump: {DUMP_FILE.name}")
         if not _run_sql_file(DUMP_FILE):
             return False
 
-    print("Database restored successfully.")
     return True
