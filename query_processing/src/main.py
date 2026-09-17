@@ -32,6 +32,7 @@ if str(_project_root) not in sys.path:
 from src.benchmark import (  
     benchmark_query_file,
     compute_metrics,
+    extract_short_plan,
 )
 from src.config import QUERIES_DIR, RESULTS_DIR  
 from src.db import get_connection, restore_dump, wait_for_db  
@@ -152,13 +153,20 @@ def main() -> int:
             metrics = compute_metrics(q_dir.name, base_runs, opt_runs)
             all_metrics.append(metrics.to_dict())
 
-            result_payload = {
+            result_payload_all = {
                 "metrics": metrics.to_dict(),
                 "baseline_plan": base_plan,
                 "optimized_plan": opt_plan,
             }
-            result_file = RESULTS_DIR / f"{q_dir.name}.json"
-            result_file.write_text(json.dumps(result_payload, indent=2), encoding="utf-8")
+            result_all_file = RESULTS_DIR / f"{q_dir.name}_all.json"
+            result_all_file.write_text(json.dumps(result_payload_all, indent=2), encoding="utf-8")
+
+            result_payload_short = {
+                "baseline": extract_short_plan(base_plan),
+                "optimized": extract_short_plan(opt_plan),
+            }
+            result_short_file = RESULTS_DIR / f"{q_dir.name}_short.json"
+            result_short_file.write_text(json.dumps(result_payload_short, indent=2), encoding="utf-8")
 
             print(
                 f"  Result: {metrics.speedup_ratio}x speedup "

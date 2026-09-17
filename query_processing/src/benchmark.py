@@ -156,3 +156,24 @@ def compute_metrics(
         speedup_ratio=speedup,
         exec_time_reduction_pct=reduction,
     )
+
+
+def extract_short_plan(plan_dict: dict[str, Any]) -> dict[str, Any]:
+    """
+    Extract strictly the 5 key metrics from the root Plan node.
+    """
+    # [fr: @zrygan; to: @all]
+    # wrote this because Enrique said "holy shit and haba"
+    # I do not know what he means by that :(
+    if not plan_dict:
+        return {}
+    plan = plan_dict.get("Plan", plan_dict)
+    return {
+        "Total Cost": plan.get("Total Cost", 0.0),
+        "Plan Rows": plan.get("Plan Rows", 0),
+        "Actual Total Time": plan.get("Actual Total Time", 0.0),
+        "Actual Rows": plan.get("Actual Rows", 0),
+        "Actual Loops": plan.get("Actual Loops", 0),
+    }
+
+
