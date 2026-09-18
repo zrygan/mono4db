@@ -1,5 +1,3 @@
-/* QUERY 3: Find films that outperform both their category average and their language average
-   by rental count */
 SELECT 
 	f.film_id,
 	f.title,

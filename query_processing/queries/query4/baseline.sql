@@ -1,5 +1,3 @@
-/* QUERY 4: Get the number of stock for a movie, the number of rentals its had and the number
-   of distinct customers whove rented it */
 SELECT 
 	f.film_id,
 	f.title,
