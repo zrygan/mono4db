@@ -1,20 +1,67 @@
-CREATE INDEX IF NOT EXISTS idx_rental_inventory_id ON rental(inventory_id);
-CREATE INDEX IF NOT EXISTS idx_inventory_film_id ON inventory(film_id);
+WITH C1 AS (
+    SELECT
+        -- K = f.film_id, f.title, fc.category_id
+        f.film_id,
+        f.title,
+        fc.category_id,
+        COUNT(i.inventory_id) AS copies_in_stock
+        -- from J2: F >< FC
+    FROM film f
+    JOIN film_category fc
+        ON fc.film_id = f.film_id
+    JOIN inventory i
+        ON i.film_id = f.film_id
+    GROUP BY
+        f.film_id,
+        f.title,
+        fc.category_id
+),
 
-SELECT 
-    f.film_id,
-    f.title,
-    f.rental_rate,
-    top10.rental_count
-FROM (
-    SELECT 
-        i.film_id,
-        COUNT(*) AS rental_count
-    FROM rental r
-    JOIN inventory i ON r.inventory_id = i.inventory_id
-    GROUP BY i.film_id
-    ORDER BY rental_count DESC
-    LIMIT 10
-) top10
-JOIN film f ON f.film_id = top10.film_id
-ORDER BY top10.rental_count DESC;
+
+-- old C2 and C4 used the same attributes + J3
+C2 AS (
+    SELECT
+        f.film_id,
+        f.title,
+        fc.category_id,
+        COUNT(r.rental_id) AS total_rentals,
+        COUNT(r.customer_id) AS unique_customers
+    FROM film f
+    JOIN film_category fc
+        ON fc.film_id = f.film_id
+    JOIN inventory i
+        ON i.film_id = f.film_id
+    LEFT JOIN rental r
+        ON r.inventory_id = i.inventory_id
+    GROUP BY
+        f.film_id,
+        f.title,
+        fc.category_id
+)
+
+SELECT
+    C1.film_id,
+    C1.title,
+    C1.category_id,
+    C1.copies_in_stock,
+    C2.total_rentals,
+    C2.unique_customers,
+
+    -- was in the original, wasn't changed to RA
+    ROUND(
+        C2.total_rentals::numeric
+        / NULLIF(C1.copies_in_stock, 0),
+        2
+    ) AS rentals_per_copy,
+
+    ROUND(
+        C2.total_rentals::numeric
+        / NULLIF(C2.unique_customers, 0),
+        2
+    ) AS rentals_per_customer
+
+FROM C1
+JOIN C2 USING (film_id, title, category_id)
+
+-- was in the original, wasn't changed to RA
+ORDER BY rentals_per_copy DESC;
