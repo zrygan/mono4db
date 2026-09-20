@@ -1,11 +1,16 @@
 SELECT 
 	f.film_id,
 	f.title,
+	c.name AS category_name,
+	l.name AS language_name,
 	COUNT(r.rental_id) AS total_rentals
 FROM film f
+JOIN film_category fc ON fc.film_id = f.film_id
+JOIN category c ON c.category_id = fc.category_id
+JOIN language l ON l.language_id = f.language_id
 JOIN inventory i ON i.film_id = f.film_id
 LEFT JOIN rental r ON r.inventory_id = i.inventory_id
-GROUP BY f.film_id, f.title
+GROUP BY f.film_id, f.title, c.name, l.name
 HAVING COUNT(r.rental_id) > (
 	SELECT AVG(rental_count) FROM (
 		SELECT f2.film_id, COUNT(r2.rental_id) AS rental_count
