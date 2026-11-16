@@ -1,0 +1,190 @@
+services:
+
+  node1:
+    image: postgres:17
+    container_name: db-central-node
+    hostname: db-central-node
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    
+    secrets:
+    - db_password
+    - repl_password
+
+    ports:
+    - "5441:5432"
+
+    command:
+      postgres
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+
+    volumes:
+      - node1_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+
+    networks:
+      - dbnet
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U app -d appdb"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  node2:
+    image: postgres:17
+    container_name: db-child-1
+    hostname: db-child-1
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    
+    secrets:
+    - db_password
+    - repl_password
+    
+    ports:
+    - "5442:5432"
+
+    command:
+      postgres
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+
+    volumes:
+      - node2_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+
+    networks:
+      - dbnet
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U app -d appdb"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  node3:
+    image: postgres:17
+    container_name: db-child-2
+    hostname: db-child-2
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    
+    secrets:
+    - db_password
+    - repl_password
+
+    ports:
+    - "5443:5432"
+
+    command:
+      postgres
+      -c wal_level=logical
+      -c max_wal_senders=10
+      -c max_replication_slots=10
+
+    volumes:
+      - node3_data:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+
+    networks:
+      - dbnet
+
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h localhost -U app -d appdb"] 
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  webapp-1:
+    build: .
+    container_name: web-central
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      DB_HOST: db-central-node
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: app
+  
+    secrets:
+      - db_password
+    networks:
+      - dbnet
+    ports:
+      - "8081:8000"
+    depends_on:
+      node1:
+        condition: service_healthy
+
+  webapp-2:
+    build: .
+    container_name: web-child1
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      DB_HOST: db-child-1
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: app
+    secrets:
+      - db_password
+    networks:
+      - dbnet
+    ports:
+      - "8082:8000"
+    depends_on:
+      node2:
+        condition: service_healthy
+
+  webapp-3:
+    build: .
+    container_name: web-child2
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      DB_HOST: db-child-2
+      DB_PORT: 5432
+      DB_NAME: appdb
+      DB_USER: app
+    secrets:
+      - db_password
+    networks:
+      - dbnet
+    ports:
+      - "8083:8000"
+    depends_on:
+      node3:
+        condition: service_healthy
+
+networks:
+  dbnet:
+
+volumes:
+  node1_data:
+  node2_data:
+  node3_data:
+
+secrets:
+  db_password:
+    environment: DB_PASSWORD
+  repl_password:
+    environment: REPL_PASSWORD
