@@ -12,7 +12,7 @@ departure_delay
 station_code
 ```
 
-## DDBMS
+## Summary
 
 Since we're going to use Docker, each node has its own Docker **container**.
 
@@ -22,23 +22,32 @@ We fragment the database so we ensure that for each entry in the database, it ex
 
 The database fragments are purely separate from the central node's database and functions as a normal database. That is, you can commit changes to the database of the leaf nodes without ever touching the central node. At the implementation level, this means that each Docker container has its own DBMS (it does not share what the central node has)!
 
-The specs implicitly require fragmentation scheme required. Note the following details: 
+The specs implicitly require fragmentation scheme required. Note the following details:
+
 1. central node has all rows.
 2. leaf nodes have subset of the complete dataset
 3. all nodes have the same schema or columns.
 
 Since the database fragments fully functional and independent databases we need to:
+
 1. enforce a homogenous database. As required by the specifications, so each node has the same schema.
 2. node synchronization. On each INSERT, DELETE, and UPDATE we need to synchronize each node so that the database of the central node is the same database by getting the union of the leaf nodes' database
 3. prevent PK collisions. Since the leaf nodes only contain a subset of the whole dataset, we need to ensure that the PKs on these subsets will not collide.
 
 ### Implementation Details
 
+#### Initialization
 
+Executing `docker compose up` should create 6 containers:
 
-===
+- Three PostgreSQL containers
+- Three Web App containers
 
-Open Questions:
+And each node has one of each. We then perform healthchecks and connectivity checks for each of the nodes.
 
-1. What will be our fragmentation condition/predicate. [Resolution: we use station_code as our fragmentation condition. Since station_code comes from a set of possible values, we can simply enforce station_codes 1..n to be in leaf node A and n+1..m to be in leaf node B (concurrence: Zhean and Ena).]
+## Open Questions
+
+1. What will be our fragmentation condition/predicate.
+   **Resolution**: we use station_code as our fragmentation condition. Since station_code comes from a set of possible values, we can simply enforce station_codes 1..n to be in leaf node A and n+1..m to be in leaf node B (concurrence: Zhean and Ena).
 2. How will the nodes communicate with one another?
+   **Resolution**:
