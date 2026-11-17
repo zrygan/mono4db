@@ -32,8 +32,13 @@ Since the database fragments fully functional and independent databases we need 
 2. node synchronization. On each INSERT, DELETE, and UPDATE we need to synchronize each node so that the database of the central node is the same database by getting the union of the leaf nodes' database
 3. prevent PK collisions. Since the leaf nodes only contain a subset of the whole dataset, we need to ensure that the PKs on these subsets will not collide.
 
+### Implementation Details
+
+
+
 ===
 
 Open Questions:
 
-1. What will be our fragmentation condition/predicate. [Resolution: ]
+1. What will be our fragmentation condition/predicate. [Resolution: we use station_code as our fragmentation condition. Since station_code comes from a set of possible values, we can simply enforce station_codes 1..n to be in leaf node A and n+1..m to be in leaf node B (concurrence: Zhean and Ena).]
+2. How will the nodes communicate with one another?
