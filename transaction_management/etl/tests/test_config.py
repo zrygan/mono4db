@@ -8,10 +8,9 @@ from etl import config
 class TestConfig(unittest.TestCase):
     """Test ETL configuration invariants and path helpers."""
 
-    def test_nodes(self):
-        self.assertEqual(config.NODES, ("node1", "node2", "node3"))
-        self.assertEqual(set(config.NODE_URLS), set(config.NODES))
-        self.assertEqual(set(config.CONTAINERS), set(config.NODES))
+    def test_central_node(self):
+        self.assertTrue(config.CENTRAL_URL.startswith("postgresql://"))
+        self.assertEqual(config.CENTRAL_CONTAINER, "db-central-node")
 
     def test_columns_match_schema(self):
         self.assertEqual(

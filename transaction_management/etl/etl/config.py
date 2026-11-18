@@ -46,7 +46,6 @@ CLEAN_DIR = DATA_DIR / "clean"
 DUMP_DIR = DATA_DIR / "dumps"
 
 SCHEMA_SQL = Path(os.environ.get("DDB_SCHEMA_SQL", TM_DIR / "db" / "schema.sql"))
-SHARED_DIR = Path(os.environ.get("DDB_SHARED_DIR", TM_DIR / "shared"))
 
 DUCKDB_MEMORY_LIMIT = os.environ.get("DDB_ETL_DUCKDB_MEMORY_LIMIT", "2GB")
 DUCKDB_THREADS = int(os.environ.get("DDB_ETL_DUCKDB_THREADS", "4"))
@@ -56,6 +55,21 @@ STOP_COLUMNS = ["stop_id", "rdt_id", "arrival_time", "departure_time", "arrival_
 
 DB_USER = "app"
 DB_NAME = "appdb"
+CENTRAL_PORT = 5441
+CENTRAL_CONTAINER = "db-central-node"
+
+def _central_url() -> str:
+    """Build the URL of the central node, honouring a DDB_CENTRAL_URL override.
+
+    Returns:
+        str: The override from the environment if set, else a localhost URL built from DB_PASSWORD.
+    """
+    password = quote(os.environ.get("DB_PASSWORD", ""), safe="")
+    default = f"postgresql://{DB_USER}:{password}@localhost:{CENTRAL_PORT}/{DB_NAME}"
+    return os.environ.get("DDB_CENTRAL_URL", default)  # override to point at a remote machine
+
+
+CENTRAL_URL = _central_url()
 
 def source_url(year: int) -> str:
     """Format remote download URL for a given dataset year.
