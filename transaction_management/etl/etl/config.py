@@ -10,8 +10,8 @@ TM_DIR = ETL_DIR.parent
 SOURCE_URL_TEMPLATE = "https://blobs.duckdb.org/nl-railway/services-{year}.csv.gz"
 SOURCE_TIMEZONE = "Europe/Amsterdam"
 DEFAULT_YEAR = 2025
-DEFAULT_DATE_FROM = "2025-08-01"
-DEFAULT_DATE_TO = "2025-08-07"
+DEFAULT_DATE_FROM = "2025-11-01"
+DEFAULT_DATE_TO = "2025-11-01"
 
 SERVICES_COLUMNS: dict[str, str] = {
     "Service:RDT-ID": "BIGINT",

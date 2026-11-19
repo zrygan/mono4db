@@ -152,7 +152,7 @@ def validate_header(csv_gz: Path) -> list[str]:
         ValueError: If column names, count, or ordering differ from expected.
         gzip.BadGzipFile: If the file is not a valid gzip archive.
     """
-    expected = expected or list(config.SERVICES_COLUMNS)
+    expected = list(config.SERVICES_COLUMNS)
     with gzip.open(csv_gz, "rt", encoding="utf-8", newline="") as f:
         header = f.readline().rstrip("\r\n").split(",")
 

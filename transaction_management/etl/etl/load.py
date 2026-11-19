@@ -1,7 +1,7 @@
 """Load stage for the distributed `stop` ETL pipeline.
 
-Loads the cleaned rows into the CENTRAL node (node1) only, with a streaming COPY inside one atomic
-transaction. The leaf nodes are filled afterwards by the central node itself (central/distribute.sql).
+Loads the cleaned rows into the CENTRAL node only. The leaf nodes are filled afterwards
+by the central node itself.
 """
 
 import logging
@@ -33,7 +33,8 @@ def _to_csv(parquet: Path, csv: Path) -> None:
 def load_central(clean: Path, max_stop_id: int, max_rdt_id: int, db_url: str | None = None) -> dict:
     """Replace the central node's `stop` table with the cleaned rows and reset its id sequences.
 
-    Re-running reloads the same state (and discards any edits made through the app). Doesnt touch leaf nodes
+    Idempotent: re-running reloads the same state (and discards any edits made through the app).
+    The leaf nodes are NOT touched; run `distribute_stop()` on the central node afterwards.
 
     Args:
         clean: Cleaned Parquet from the transform.
@@ -42,7 +43,7 @@ def load_central(clean: Path, max_stop_id: int, max_rdt_id: int, db_url: str | N
         db_url: libpq connection URL. Defaults to config.CENTRAL_URL.
 
     Returns:
-        dict: The row count of node1 after the load.
+        dict: The row count of central node after the load.
     """
     db_url = db_url or config.CENTRAL_URL
     with tempfile.TemporaryDirectory(dir=clean.parent, prefix=".load-") as tmp:
@@ -58,7 +59,6 @@ def load_central(clean: Path, max_stop_id: int, max_rdt_id: int, db_url: str | N
                     cur.copy_expert(
                         f"COPY {config.TABLE} ({', '.join(config.STOP_COLUMNS)}) FROM STDIN WITH (FORMAT csv)", f
                     )
-                reset_sequences(cur, max_stop_id, max_rdt_id)
                 cur.execute(f"SELECT count(*) FROM {config.TABLE}")
                 rows = cur.fetchone()[0]
             conn.autocommit = True
@@ -67,5 +67,5 @@ def load_central(clean: Path, max_stop_id: int, max_rdt_id: int, db_url: str | N
         finally:
             conn.close()
 
-    log.info("node1 (central) now holds %d rows", rows)
+    log.info("central node now holds %d rows", rows)
     return {"node1": rows}

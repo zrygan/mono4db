@@ -47,13 +47,13 @@ class TestTransform(unittest.TestCase):
     def test_times_are_amsterdam_clock_time_and_delays_follow_cancellation(self):
         rows = [
             _r(1, "AA", arr="2025-01-02 09:05:00+01", ad=60),
-            _r(2, "ZZ", arr="2025-07-02 09:05:00+02", ad=120, ac=True, dd=30, dc=False),  # summer, cancelled arrival
+            _r(2, "ZZ", arr="2025-07-02 09:05:00+02", ad=120, ac=True, dd=30, dc=False),
         ]
         clean, _ = self._run(rows)
         got = duckdb.sql(
             f"SELECT stop_id, arrival_time::VARCHAR, arrival_delay, departure_delay FROM '{clean}' ORDER BY stop_id"
         ).fetchall()
-        self.assertEqual(got, [(1, "09:05:00", 60, 0), (2, "09:05:00", None, 30)])
+        self.assertEqual(got, [(1, "2025-01-02 09:05:00", 60, 0), (2, "2025-07-02 09:05:00", None, 30)])
 
     def test_station_merge_and_rename(self):
         rows = [_r(1, "BERHBT"), _r(2, "LAND", name="Venezia Santa Lucia"), _r(3, "LAND", name="Landgraaf"), _r(4, "ZZZ")]

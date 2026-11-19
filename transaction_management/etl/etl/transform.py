@@ -29,13 +29,10 @@ def _station_code_sql() -> str:
         str: DuckDB SQL CASE expression returning the canonical station code.
     """
     whens = [
-        f'WHEN "Stop:Station code" = {_sql_str(code)} AND "Stop:Station name" = {_sql_str(name)} THEN {_sql_str(new)}'
+        f"WHEN station_code = {_sql_str(code)} AND station_name = {_sql_str(name)} THEN {_sql_str(new)}"
         for (code, name), new in config.STATION_CODE_RENAMES.items()
-    ] + [
-        f'WHEN "Stop:Station code" = {_sql_str(old)} THEN {_sql_str(new)}'
-        for old, new in config.STATION_CODE_MERGES.items()
-    ]
-    return f'CASE {" ".join(whens)} ELSE "Stop:Station code" END'
+    ] + [f"WHEN station_code = {_sql_str(old)} THEN {_sql_str(new)}" for old, new in config.STATION_CODE_MERGES.items()]
+    return f"CASE {' '.join(whens)} ELSE station_code END"
 
 
 def _typed_sql(staged: Path) -> str:
@@ -43,16 +40,13 @@ def _typed_sql(staged: Path) -> str:
 
     Args:
         staged: Path to the staged Parquet file.
-
-    Returns:
-        str: DuckDB SELECT yielding stop_id, rdt_id, arrival/departure TIME, delays and station_code.
     """
     tz = _sql_str(config.SOURCE_TIMEZONE)
     return f"""
         SELECT stop_id::BIGINT                                   AS stop_id,
                rdt_id::BIGINT                                    AS rdt_id,
-               (arrival_ts   AT TIME ZONE {tz})::TIME            AS arrival_time,
-               (departure_ts AT TIME ZONE {tz})::TIME            AS departure_time,
+               (arrival_ts   AT TIME ZONE {tz})::TIMESTAMP       AS arrival_time,
+               (departure_ts AT TIME ZONE {tz})::TIMESTAMP       AS departure_time,
                (CASE WHEN NOT arrival_cancelled   THEN arrival_delay   END)::INTEGER AS arrival_delay,
                (CASE WHEN NOT departure_cancelled THEN departure_delay END)::INTEGER AS departure_delay,
                {_station_code_sql()}::VARCHAR                    AS station_code
@@ -61,7 +55,7 @@ def _typed_sql(staged: Path) -> str:
     """
 
 
-def _validate(con, out: Path, staged_rows: int) -> dict:
+def _validate(con, part: Path, staged_rows: int) -> dict:
     """Validate transformed tables against data integrity and foreign key constraints.
 
     Args:
@@ -70,12 +64,9 @@ def _validate(con, out: Path, staged_rows: int) -> dict:
         staged_rows: Row count of the staged file the clean rows came from.
 
     Returns:
-        dict: Table row counts if all validation checks succeed.
-
-    Raises:
-        ValueError: If any integrity constraint or foreign key check fails.
+        dict: Row count if all validation checks succeed.
     """
-    con.execute(f"CREATE OR REPLACE VIEW clean AS FROM read_parquet({_sql_str(out)})")
+    con.execute(f"CREATE OR REPLACE VIEW clean AS FROM read_parquet({_sql_str(part)})")
     counts = {"rows": con.execute("SELECT count(*) FROM clean").fetchone()[0]}
     merged = ", ".join(_sql_str(c) for c in config.STATION_CODE_MERGES)
 
@@ -92,21 +83,18 @@ def _validate(con, out: Path, staged_rows: int) -> dict:
 
 
 def run_transform(staged: Path, out: Path, profile: dict) -> dict:
-    """Build the cleaned `stop` Parquet from the staged Parquet.
+    """Build every table from the staged Parquet into `out/<table>.parquet`.
 
-    The file is written to a `.part` first, validated, and only then renamed, so a failed run never
-    leaves a bad file next to a good one.
+    Each file is written to a `.part` first and renamed, so a failed run never leaves a
+    half-written table next to good ones.
 
     Args:
-        staged: Staged Parquet from the extract.
-        out: Destination Parquet (config.clean_path).
-        profile: The extract's profile (row count and id maxima of the whole window).
+        staged: Staged services Parquet from the extract.
+        out: Warehouse directory for this year (config.warehouse_dir).
+        profile: The extract's profile (row count and max id).
 
     Returns:
-        dict: The output path, row count and the id maxima (the load seeds the id sequences with them).
-
-    Raises:
-        ValueError: If any validation check fails.
+        dict: The output directory and the row count of each table.
     """
     out.parent.mkdir(parents=True, exist_ok=True)
     part = out.with_name(out.name + ".part")

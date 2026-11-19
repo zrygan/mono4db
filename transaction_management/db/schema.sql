@@ -1,8 +1,8 @@
-CREATE TABLE IF NOT EXISTS fact_stop (
+CREATE TABLE IF NOT EXISTS stop (
     stop_id         BIGINT PRIMARY KEY,
     rdt_id          BIGINT NOT NULL,
-    arrival_time    SMALLINT,
-    departure_time  SMALLINT,
+    arrival_time    TIMESTAMP,
+    departure_time  TIMESTAMP,
     arrival_delay   INTEGER,
     departure_delay INTEGER,
     station_code    TEXT   NOT NULL
