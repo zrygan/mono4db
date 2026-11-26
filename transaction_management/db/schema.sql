@@ -24,3 +24,11 @@ CREATE TABLE IF NOT EXISTS received_messages (
     message_id  TEXT        PRIMARY KEY,   -- duplicates are ignored, then acknowledged
     received_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- 2PC coordinator log (every site can coordinate, so every site has one)
+CREATE TABLE IF NOT EXISTS twopc_log (
+    gid          TEXT        PRIMARY KEY,   -- '<site_id>-<unique>', e.g. 'site3-1042'
+    participants TEXT[]      NOT NULL,      -- e.g. {site1,site2}
+    state        TEXT        NOT NULL CHECK (state IN ('started', 'commit', 'abort', 'done')),
+    updated_at   TIMESTAMPTZ NOT NULL DEFAULT now()
+);
