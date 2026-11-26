@@ -1,6 +1,7 @@
 x-postgres-common:
   &postgres-common
   image: postgres:17
+  command: postgres -c max_prepared_transactions=100
   environment:
     POSTGRES_DB: ${DB_NAME:-appdb}
     POSTGRES_USER: ${DB_USER:-app}
@@ -32,9 +33,7 @@ x-webapp-common:
     CENTRAL_SITE_URL: http://web-central:8000
     LEAF1_SITE_URL: http://web-child1:8000
     LEAF2_SITE_URL: http://web-child2:8000
-    CENTRAL_DB_HOST: db-central-node
-    LEAF1_DB_HOST: db-child-1
-    LEAF2_DB_HOST: db-child-2
+    # each web app sets DB_HOST to its own database only
   networks:
     - dbnet
 
