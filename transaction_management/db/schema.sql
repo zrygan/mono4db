@@ -8,21 +8,30 @@ CREATE TABLE IF NOT EXISTS fact_stop (
     station_code    TEXT   NOT NULL
 );
 
--- Persistent messaging, sending site (Silberschatz 19.33)
-CREATE TABLE IF NOT EXISTS messages_to_send (
-    message_id  TEXT        PRIMARY KEY,   -- unique: e.g. '<node_id>-<seq>'
-    seq         BIGSERIAL,                 -- send order
-    destination TEXT        NOT NULL,      -- 'node1' | 'node2' | 'node3'
-    op          TEXT        NOT NULL CHECK (op IN ('insert', 'update', 'delete')),
+-- Catch-up replication, source side: row images of writes a down node missed.
+-- Appends take LOCK TABLE replication_log IN EXCLUSIVE MODE (held until
+-- COMMIT/ROLLBACK PREPARED) so that seq follows commit order.
+CREATE TABLE IF NOT EXISTS replication_log (
+    seq         BIGSERIAL   PRIMARY KEY,   -- pull order
+    gid         TEXT        NOT NULL,      -- 2PC transaction that produced the change
+    dest        TEXT        NOT NULL CHECK (dest IN ('site1', 'site2', 'site3')),
+    op          TEXT        NOT NULL CHECK (op IN ('upsert', 'delete')),
     stop_id     BIGINT      NOT NULL,
     payload     JSONB,                     -- row after the change; NULL for delete
-    created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);  -- a row is DELETED once the destination acknowledges it
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CHECK ((op = 'delete') = (payload IS NULL))
+);  -- rows with seq <= p are DELETED when dest pulls with after = p
 
--- Persistent messaging, receiving site (Silberschatz 19.34)
-CREATE TABLE IF NOT EXISTS received_messages (
-    message_id  TEXT        PRIMARY KEY,   -- duplicates are ignored, then acknowledged
-    received_at TIMESTAMPTZ NOT NULL DEFAULT now()
+CREATE INDEX IF NOT EXISTS replication_log_dest_seq ON replication_log (dest, seq);
+
+-- Catch-up replication, receiving side: last entry applied from each source.
+-- Updated in the same transaction that applies the entry.
+-- Initial fragmentation inserts a row with last_seq = 0 for every source;
+-- a missing row means the node lost its data and must do a full resync.
+CREATE TABLE IF NOT EXISTS replication_position (
+    source      TEXT        PRIMARY KEY CHECK (source IN ('site1', 'site2', 'site3')),
+    last_seq    BIGINT      NOT NULL DEFAULT 0 CHECK (last_seq >= 0),
+    updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 -- 2PC coordinator log (every site can coordinate, so every site has one)
