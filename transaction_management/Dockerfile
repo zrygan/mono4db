@@ -1,21 +1,13 @@
-# --- build stage: compile TypeScript ---
-FROM node:22 AS build
-WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm ci
-COPY tsconfig.json ./
-COPY src ./src
-RUN npm run build
+# --- build stage: compile a static Go binary (frontend is embedded) ---
+FROM golang:1.27 AS build
+WORKDIR /src
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/node .
 
-# --- runtime stage: production deps + compiled JS only ---
-FROM node:22
-WORKDIR /usr/src/app
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends postgresql-client && \
-    rm -rf /var/lib/apt/lists/*
-COPY package*.json ./
-RUN npm ci --omit=dev
-COPY --from=build /usr/src/app/dist ./dist
-COPY src/app/public ./dist/app/public
+# --- runtime stage: just the binary ---
+FROM gcr.io/distroless/static-debian12
+COPY --from=build /out/node /node
 EXPOSE 8000
-CMD ["node", "dist/server.js"]
+ENTRYPOINT ["/node"]
