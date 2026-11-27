@@ -32,7 +32,6 @@ def cmd_run(args) -> None:
     clean = config.clean_path(args.year, args.date_from, args.date_to)
     t = transform.run_transform(Path(profile["staged"]), clean, profile)
     load.load_central(Path(t["clean"]), t["max_stop_id"], t["max_rdt_id"])
-    print(f"OK node1 holds {t['rows']} rows. Next: have node1 fill node2/node3 (central/distribute.sql)")
 
 
 def cmd_dump(args) -> None:
@@ -52,7 +51,6 @@ def cmd_restore(args) -> int:
             print("Aborted, nothing changed.")
             return 1
     dump.restore_central(Path(args.dir), args.via)
-    print("OK node1 restored. Next: have node1 fill node2/node3 (central/distribute.sql)")
     return 0
 
 

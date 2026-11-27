@@ -33,9 +33,6 @@ def _to_csv(parquet: Path, csv: Path) -> None:
 def load_central(clean: Path, max_stop_id: int, max_rdt_id: int, db_url: str | None = None) -> dict:
     """Replace the central node's `stop` table with the cleaned rows and reset its id sequences.
 
-    Idempotent: re-running reloads the same state (and discards any edits made through the app).
-    The leaf nodes are NOT touched; run `distribute_stop()` on the central node afterwards.
-
     Args:
         clean: Cleaned Parquet from the transform.
         max_stop_id: Highest stop_id in the data (seeds `stop_id_seq`).

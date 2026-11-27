@@ -9,8 +9,8 @@ All three nodes store one relation, `fact_stop`, with the same schema:
 ```sql
 stop_id         BIGINT PRIMARY KEY,
 rdt_id          BIGINT NOT NULL,
-arrival_time    SMALLINT,
-departure_time  SMALLINT,
+arrival_time    TIMESTAMP,
+departure_time  TIMESTAMP,
 arrival_delay   INTEGER,
 departure_delay INTEGER,
 station_code    TEXT   NOT NULL
